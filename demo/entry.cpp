@@ -3,8 +3,94 @@
 
 GR::Entity sword;
 
+void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action);
+void Loop(GR::GrayEngine* Context, double Delta);
+
+struct InputHandler {
+	std::map<GR::EKey, bool> KeyState;
+} IH;
+
+int main(int argc, char** argv)
+{
+
+	std::string exec_path = "";
+
+	if (argc > 0)
+	{
+		exec_path = argv[0];
+		exec_path = exec_path.substr(0, exec_path.find_last_of('\\') + 1);
+	}
+
+	GR::ApplicationSettings Settings = { "Vulkan Application", {1024, 720} };
+	std::unique_ptr<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(exec_path, Settings);
+
+	Engine->userPointer1 = &IH;
+
+	Engine->AddInputFunction(Loop);
+	Engine->GetEventListener().Subscribe(KeyPress);
+	Engine->GetEventListener().Subscribe(KeyPress);
+
+	sword = Engine->LoadModel("content\\sword.fbx", nullptr);
+	Engine->GetMainCamera().View.SetOffset({ 0.0, 0.0, -200.0 });
+
+	Engine->StartGameLoop();
+
+	return 0;
+}
+
+float speed = 100.0f;
+float sense = 50.0f;
+
 void Loop(GR::GrayEngine* Context, double Delta)
 {
+
+	TVec3 off = TVec3(0.0);
+	TVec3 rot = TVec3(0.0);
+
+
+	if (IH.KeyState[GR::EKey::A]) { off.x += Delta * speed; }
+	if (IH.KeyState[GR::EKey::D]) { off.x -= Delta * speed; }
+	if (IH.KeyState[GR::EKey::W]) { off.z += Delta * speed; }
+	if (IH.KeyState[GR::EKey::S]) { off.z -= Delta * speed; }
+	if (IH.KeyState[GR::EKey::ArrowLeft]) { rot.y -= Delta * sense; }
+	if (IH.KeyState[GR::EKey::ArrowRight]) { rot.y += Delta * sense; }
+	if (IH.KeyState[GR::EKey::ArrowUp]) { rot.x += Delta * sense; }
+	if (IH.KeyState[GR::EKey::ArrowDown]) { rot.x -= Delta * sense; }
+
+	//switch (key)
+	//{
+	//case GR::EKey::A:
+	//	off.x += 10.f;
+	//	break;
+	//case GR::EKey::D:
+	//	off.x -= 10.f;
+	//	break;
+	//case GR::EKey::S:
+	//	off.z -= 10.f;
+	//	break;
+	//case GR::EKey::W:
+	//	off.z += 10.f;
+	//	break;
+	//case GR::EKey::ArrowRight:
+	//	rot.y += 10.f;
+	//	break;
+	//case GR::EKey::ArrowLeft:
+	//	rot.y -= 10.f;
+	//	break;
+	//case GR::EKey::ArrowDown:
+	//	rot.x -= 10.f;
+	//	break;
+	//case GR::EKey::ArrowUp:
+	//	rot.x += 10.f;
+	//	break;
+	//default:
+	//	break;
+	//}
+
+	rot = glm::radians(rot);
+	Context->GetMainCamera().View.Rotate(rot.x, rot.y, rot.z);
+	Context->GetMainCamera().View.Translate(off);
+
 	double angle = Context->GetTime();
 
 	GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(sword);
@@ -17,69 +103,18 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
 }
 
-void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action)
-{
-	if (Action == GR::EAction::Release)
-		return;
+void MouseEvent(GR::GrayEngine* Context, GR::EMouse key, GR::EAction Action) {
 
-	TVec3 off = TVec3(0.0);
-	TVec3 rot = TVec3(0.0);
-
-	switch (key)
-	{
-	case GR::EKey::A:
-		off.x += 10.f;
-		break;
-	case GR::EKey::D:
-		off.x -= 10.f;
-		break;
-	case GR::EKey::S:
-		off.z -= 10.f;
-		break;
-	case GR::EKey::W:
-		off.z += 10.f;
-		break;
-	case GR::EKey::ArrowRight:
-		rot.y += 10.f;
-		break;
-	case GR::EKey::ArrowLeft:
-		rot.y -= 10.f;
-		break;
-	case GR::EKey::ArrowDown:
-		rot.x -= 10.f;
-		break;
-	case GR::EKey::ArrowUp:
-		rot.x += 10.f;
-		break;
-	default:
-		break;
-	}
-
-	rot = glm::radians(rot);
-	Context->GetMainCamera().View.Rotate(rot.x, rot.y, rot.z);
-	Context->GetMainCamera().View.Translate(off);
 }
 
-int main(int argc, char** argv)
+
+
+
+void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action)
 {
-	std::string exec_path = "";
-	
-	if (argc > 0)
-	{
-		exec_path = argv[0];
-		exec_path = exec_path.substr(0, exec_path.find_last_of('\\') + 1);
-	}
 
-	GR::ApplicationSettings Settings = { "Vulkan Application", {1024, 720} };
-	std::unique_ptr<GR::GrayEngine> Engine = std::make_unique<GR::GrayEngine>(exec_path, Settings);
 
-	Engine->AddInputFunction(Loop);
-	Engine->GetEventListener().Subscribe(KeyPress);
+	InputHandler& ih = *static_cast<InputHandler*> (Context->userPointer1);
 
-	sword = Engine->LoadModel("content\\sword.fbx", nullptr);
-	Engine->GetMainCamera().View.SetOffset({0.0, 0.0, -200.0});
-
-	Engine->StartGameLoop();
-
-	return 0;
+	ih.KeyState[key] = Action != GR::EAction::Release;
 }
