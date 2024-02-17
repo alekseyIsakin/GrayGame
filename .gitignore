@@ -1,5 +1,7 @@
 engine\
 bin/
-build/
+builds/
 *.bat
 *.bak
+.vs/
+out/
