@@ -2,6 +2,7 @@
 #include "engine.hpp"
 
 GR::Entity sword;
+GR::Entity gizmo;
 std::vector<GR::Entity> entityes;
 std::vector<int> entityesFlyOffset;
 std::vector<TVec3> entityesBasePosition;
@@ -47,9 +48,13 @@ int main(int argc, char** argv)
 	//registry.emplace_or_replace<GRComponents::Transform>(ent);
 
 	sword = Engine->LoadModel("content\\sword.fbx", nullptr);
+	gizmo = Engine->LoadModel("content\\gizmo.fbx", nullptr);
+
+	GRComponents::Transform& wldr = Engine->GetComponent<GRComponents::Transform>(gizmo);
+	wldr.SetOffset(TVec3(30.0f, 30.f, 100.f));
 
 	for (int i = 0; i < 50; i++) {
-		GR::Entity ent = Engine->LoadModel("content\\sword.fbx", nullptr);
+		GR::Entity ent = Engine->LoadModel("content\\cube.fbx", nullptr);
 		Engine->EmplaceComponent<SwordAdditionalInfo>(ent);
 
 		GRComponents::Transform& wld = Engine->GetComponent<GRComponents::Transform>(ent);
@@ -84,7 +89,7 @@ int main(int argc, char** argv)
 }
 
 float speed = 500.0f;
-float sense = .01f;
+float sense = .03f;
 
 void Loop(GR::GrayEngine* Context, double Delta)
 {
@@ -115,24 +120,49 @@ void Loop(GR::GrayEngine* Context, double Delta)
 	if (IH.MouseIsLocked) {
 		rot = glm::radians(rot);
 		Context->GetMainCamera().View.Rotate(rot.y * sense, -rot.x * sense, 0.);
+		TVec3 cameraPos = Context->GetMainCamera().View.GetOffset();
+
+		int d = glm::length2(cameraPos);
+		if (d > 10000) {
+			//off += glm::normalize(cameraPos);
+		}
+
+		//printf("%f %f %f | %d \n", cameraPos.x, cameraPos.y, cameraPos.z, d);
+
 		Context->GetMainCamera().View.Translate(off);
 
 		IH.MouseOffset = TVec2(0.f);
 	}
 
+
 	double angle = Context->GetTime();
-	TVec3 cameraPos = Context->GetMainCamera().View.GetOffset();
+	TVec3 cameraPos = Context->GetMainCamera().View.GetOffset() ;
+	TMat3 cameraRot = glm::transpose( Context->GetMainCamera().View.GetRotation());
 	cameraPos *= -1;
 
+	{
+		GRComponents::Transform& wldr = Context->GetComponent<GRComponents::Transform>(gizmo);
+
+		TVec3 newpos = cameraPos - cameraRot * TVec3(30.0f, 30.f, 100.f);
+
+		wldr.SetOffset(newpos);
+
+
+		TVec3 gpos = wldr.matrix[3];
+		TVec3 fwd = glm::normalize(gpos);
+		TVec3 rg = glm::normalize(glm::cross(fwd, TVec3(.0f, 1.0f, .0f)));
+		TVec3 up = glm::normalize(glm::cross(fwd, rg));
+		printf("%6.3f %6.3f %6.3f  \n", gpos.x, gpos.y, gpos.z);
+		wldr.SetRotation(rg, up, fwd);
+
+	}
+
 	GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(sword);
-	//wld.SetOffset(cameraPos);
 	wld.SetOffset(TVec3(.0, glm::sin(angle) * 25.0, 0.0));
-	//wld.SetRotation(0.0, glm::radians(angle * 50.0), 0.0);
 
 	GRComponents::Color& clr = Context->GetComponent<GRComponents::Color>(sword);
 	clr.RGB = glm::abs(TVec3(glm::sin(angle), glm::cos(angle), glm::tan(angle)));
 
-	printf("%f %f %f\n", cameraPos.x, cameraPos.y, cameraPos.z);
 
 	for (int i = 0; i < entityes.size(); i++) {
 		int offset = entityesFlyOffset[i];
@@ -147,7 +177,7 @@ void Loop(GR::GrayEngine* Context, double Delta)
 		TVec3 up = glm::normalize(cameraPos - baseOffset);
 		TVec3 rg = glm::cross(up, TVec3(1.f, 1.f, .0f));
 
-		wld.SetRotation(up, rg);
+		//wld.SetRotation(up, rg);
 	}
 
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
