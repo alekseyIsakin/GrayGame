@@ -2,12 +2,20 @@
 #include "engine.hpp"
 
 GR::Entity sword;
+std::vector<GR::Entity> entityes;
+std::vector<int> entityesFlyOffset;
+std::vector<TVec3> entityesBasePosition;
+GR::Entity sword_r;
 
+void MouseMove(GR::GrayEngine* Context, double x, double y);
 void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action);
 void Loop(GR::GrayEngine* Context, double Delta);
+TVec2 WindowCenter = TVec2(0);
 
 struct InputHandler {
 	std::map<GR::EKey, bool> KeyState;
+	TVec2 MouseOffset = TVec2(0.f);
+	bool MouseIsLocked = false;
 } IH;
 
 int main(int argc, char** argv)
@@ -28,10 +36,35 @@ int main(int argc, char** argv)
 
 	Engine->AddInputFunction(Loop);
 	Engine->GetEventListener().Subscribe(KeyPress);
-	Engine->GetEventListener().Subscribe(KeyPress);
+	Engine->GetEventListener().Subscribe(MouseMove);
 
 	sword = Engine->LoadModel("content\\sword.fbx", nullptr);
+
+
+	for (int i = 0; i < 50; i++) {
+		GR::Entity ent = Engine->LoadModel("content\\sword.fbx", nullptr);
+
+		GRComponents::Transform& wld = Engine->GetComponent<GRComponents::Transform>(ent);
+		GRComponents::Color& clr = Engine->GetComponent<GRComponents::Color>(ent);
+
+		int radius = 400;
+		wld.SetOffset(TVec3(
+			radius - rand() % (radius * 2),
+			radius - rand() % (radius * 2),
+			radius - rand() % (radius * 2)));
+
+		float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+		clr.RGB = TVec3(r, g, b);
+		entityes.push_back(ent);
+		entityesFlyOffset.push_back(rand());
+		entityesBasePosition.push_back(wld.GetOffset());
+	}
+
+
 	Engine->GetMainCamera().View.SetOffset({ 0.0, 0.0, -200.0 });
+	WindowCenter = Engine->GetWindow().GetWindowSize() / 2;
 
 	Engine->StartGameLoop();
 
@@ -39,72 +72,70 @@ int main(int argc, char** argv)
 }
 
 float speed = 100.0f;
-float sense = 50.0f;
+float sense = .01f;
 
 void Loop(GR::GrayEngine* Context, double Delta)
 {
 
 	TVec3 off = TVec3(0.0);
-	TVec3 rot = TVec3(0.0);
-
+	TVec2 rot = IH.MouseOffset;
 
 	if (IH.KeyState[GR::EKey::A]) { off.x += Delta * speed; }
 	if (IH.KeyState[GR::EKey::D]) { off.x -= Delta * speed; }
 	if (IH.KeyState[GR::EKey::W]) { off.z += Delta * speed; }
 	if (IH.KeyState[GR::EKey::S]) { off.z -= Delta * speed; }
-	if (IH.KeyState[GR::EKey::ArrowLeft]) { rot.y -= Delta * sense; }
-	if (IH.KeyState[GR::EKey::ArrowRight]) { rot.y += Delta * sense; }
-	if (IH.KeyState[GR::EKey::ArrowUp]) { rot.x += Delta * sense; }
-	if (IH.KeyState[GR::EKey::ArrowDown]) { rot.x -= Delta * sense; }
+	if (IH.KeyState[GR::EKey::Key_1]) {
+		IH.MouseOffset = TVec2(0.f);
+		IH.MouseIsLocked = true;
+		Context->GetWindow().DisableCursor(false);
+	}
+	if (IH.KeyState[GR::EKey::Key_2] ||
+		IH.KeyState[GR::EKey::Escape]) {
+		IH.MouseIsLocked = false;
+		Context->GetWindow().DisableCursor(true);
+	}
+	if (IH.KeyState[GR::EKey::ArrowLeft]) { rot.y -= 100.f; }
+	if (IH.KeyState[GR::EKey::ArrowRight]) { rot.y += 100.f; }
+	if (IH.KeyState[GR::EKey::ArrowUp]) { rot.x += 100.f; }
+	if (IH.KeyState[GR::EKey::ArrowDown]) { rot.x -= 100.f; }
 
-	//switch (key)
-	//{
-	//case GR::EKey::A:
-	//	off.x += 10.f;
-	//	break;
-	//case GR::EKey::D:
-	//	off.x -= 10.f;
-	//	break;
-	//case GR::EKey::S:
-	//	off.z -= 10.f;
-	//	break;
-	//case GR::EKey::W:
-	//	off.z += 10.f;
-	//	break;
-	//case GR::EKey::ArrowRight:
-	//	rot.y += 10.f;
-	//	break;
-	//case GR::EKey::ArrowLeft:
-	//	rot.y -= 10.f;
-	//	break;
-	//case GR::EKey::ArrowDown:
-	//	rot.x -= 10.f;
-	//	break;
-	//case GR::EKey::ArrowUp:
-	//	rot.x += 10.f;
-	//	break;
-	//default:
-	//	break;
-	//}
-
-	rot = glm::radians(rot);
-	Context->GetMainCamera().View.Rotate(rot.x, rot.y, rot.z);
-	Context->GetMainCamera().View.Translate(off);
+	if (IH.MouseIsLocked) {
+		rot = glm::radians(rot);
+		Context->GetMainCamera().View.Rotate(rot.y * sense, -rot.x * sense, 0.);
+		Context->GetMainCamera().View.Translate(off);
+		IH.MouseOffset = TVec2(0.f);
+	}
 
 	double angle = Context->GetTime();
 
 	GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(sword);
-	wld.SetOffset(TVec3(0.0, glm::sin(angle) * 5.0, 0.0));
+	wld.SetOffset(TVec3(glm::sin(angle) * 25.0, glm::sin(angle) * 25.0, 0.0));
 	wld.SetRotation(0.0, glm::radians(angle * 50.0), 0.0);
 
 	GRComponents::Color& clr = Context->GetComponent<GRComponents::Color>(sword);
 	clr.RGB = glm::abs(TVec3(glm::sin(angle), glm::cos(angle), glm::tan(angle)));
 
+	for (int i = 0; i < entityes.size(); i++) {
+		int offset = entityesFlyOffset[i];
+		TVec3 baseOffset = entityesBasePosition[i];
+
+		GRComponents::Transform& wld = Context->GetComponent<GRComponents::Transform>(entityes[i]);
+
+		TVec3 new_pos = TVec3(.0f, glm::sin(offset + angle) * 25.f, 0.0);
+		wld.SetOffset(baseOffset + new_pos);
+	}
+
 	Context->GetWindow().SetTitle(("Vulkan Application " + std::format("{:.1f}", 1.0 / Delta)).c_str());
 }
 
-void MouseEvent(GR::GrayEngine* Context, GR::EMouse key, GR::EAction Action) {
+void MouseMove(GR::GrayEngine* Context, double x, double y) {
+	InputHandler& ih = *static_cast<InputHandler*> (Context->userPointer1);
+	WindowCenter = Context->GetWindow().GetWindowSize() / 2;
 
+	if (ih.MouseIsLocked) {
+		ih.MouseOffset += TVec2(WindowCenter.x - x, WindowCenter.y - y);
+		Context->GetWindow().SetCursorPos(WindowCenter.x, WindowCenter.y);
+	}
 }
 
 
@@ -112,8 +143,6 @@ void MouseEvent(GR::GrayEngine* Context, GR::EMouse key, GR::EAction Action) {
 
 void KeyPress(GR::GrayEngine* Context, GR::EKey key, GR::EAction Action)
 {
-
-
 	InputHandler& ih = *static_cast<InputHandler*> (Context->userPointer1);
 
 	ih.KeyState[key] = Action != GR::EAction::Release;
