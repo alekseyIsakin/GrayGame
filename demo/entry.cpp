@@ -219,7 +219,7 @@ inline void ControlCamera(Camera& camera, double delta)
 
 	camera.Transform.Translate(off);
 
-	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.Transform.GetOffset());
+	glm::vec3 U = glm::normalize(camera.Transform.GetOffset());
 	glm::quat p = glm::rotation(glm::vec3(0.0, 1.0, 0.0), U);
 
 	glm::quat q = angleAxis(CameraPYR.y, U);

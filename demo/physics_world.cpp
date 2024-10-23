@@ -156,7 +156,7 @@ namespace GR
 		btRigidBody* body = GetComponent<Components::Body>(object).body;
 
 		btTransform physTransform;
-		glm::dmat4 T = transform.GetMatrix();
+		glm::dmat4 T = transform.GetMatrix<double>();
 		physTransform.setFromOpenGLMatrix(glm::value_ptr(T));
 		body->setWorldTransform(physTransform);
 		body->clearForces();
@@ -176,7 +176,7 @@ namespace GR
 		btRigidBody* body = GetComponent<Components::Body>(object).body;
 
 		btTransform physTransform;
-		glm::dmat4 T = transform.GetMatrix();
+		glm::dmat4 T = transform.GetMatrix<double>();
 		physTransform.setFromOpenGLMatrix(glm::value_ptr(T));
 		body->setWorldTransform(physTransform);
 	}
