@@ -48,22 +48,18 @@ void KeyPress(Events::KeyPress Event, void* Data)
 		case Enums::EKey::Key_1:
 			Sun = 1.0;
 			CloudLayer.Coverage = 0.5;
-			CloudLayer.VerticalSpan = 0.5;
 			break;
 		case Enums::EKey::Key_2:
 			Sun = 0.495;
 			CloudLayer.Coverage = 0.4;
-			CloudLayer.VerticalSpan = 0.8;
 			break;
 		case Enums::EKey::Key_3:
 			Sun = 0.52;
 			CloudLayer.Coverage = 0.75;
-			CloudLayer.VerticalSpan = 0.0;
 			break;
 		case Enums::EKey::Key_4:
 			Sun = 0.6;
 			CloudLayer.Coverage = 0.6;
-			CloudLayer.VerticalSpan = 0.15;
 			break;
 		default:
 			break;
@@ -82,9 +78,8 @@ inline void UpdateUI(Renderer& renderer)
 
 	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
 	ImGui::SliderFloat("Coverage", &CloudLayer.Coverage, 0.0, 1.0);
-	ImGui::SliderFloat("Vertical span", &CloudLayer.VerticalSpan, 0.0, 1.0);
 	ImGui::SliderFloat("Wind speed", &CloudLayer.WindSpeed, 0.0, 1.0);
-	ImGui::DragFloat("Absorption", &CloudLayer.Absorption, 1e-5, 0.0, 1.0, "%.5f");
+	ImGui::DragFloat("Absorption", &CloudLayer.Density, 1e-5, 0.0, 1.0, "%.5f");
 
 	ImGui::End();
 };
