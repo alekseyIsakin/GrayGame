@@ -79,7 +79,7 @@ inline void UpdateUI(Renderer& renderer)
 	ImGui::SliderFloat("Sun position", &Sun, 0.0, 1.0);
 	ImGui::SliderFloat("Coverage", &CloudLayer.Coverage, 0.0, 1.0);
 	ImGui::SliderFloat("Wind speed", &CloudLayer.WindSpeed, 0.0, 1.0);
-	ImGui::DragFloat("Absorption", &CloudLayer.Density, 1e-5, 0.0, 1.0, "%.5f");
+	ImGui::DragFloat("Density", &CloudLayer.Density, 1e-5, 0.0, 1.0, "%.5f");
 
 	ImGui::End();
 };
@@ -95,7 +95,7 @@ inline void ControlCamera(GR::Camera& camera, double delta)
 
 	if (KeyStates[Enums::EKey::PageUp] != Enums::EAction::Release) off.y += speed_mult * delta;
 	if (KeyStates[Enums::EKey::PageDown] != Enums::EAction::Release) off.y -= speed_mult * delta;
-
+	
 	camera.Transform.Translate(off);
 
 	glm::vec3 U = glm::normalize(glm::dvec3(0.0, Renderer::Rg, 0.0) + camera.Transform.GetOffset());
