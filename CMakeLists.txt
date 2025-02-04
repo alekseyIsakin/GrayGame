@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(DemoPrj)
 
 set(INCLUDE_GUI 1)
+add_compile_definitions(FORCE_VSYNC)
 
 set(COPY_PATH ${DemoPrj_SOURCE_DIR}/bin)
 
