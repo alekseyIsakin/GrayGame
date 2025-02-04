@@ -12,6 +12,7 @@ if(INCLUDE_GUI)
 endif()
 
 add_compile_definitions(BT_USE_DOUBLE_PRECISION)
+add_compile_definitions(FORCE_VSYNC)
 
 add_subdirectory(engine)
 add_subdirectory(demo)
